@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Image Recursor</title>
+    <script type="text/javascript">//<![CDATA[
+      "use strict";
+
+      function initCanvas(cvs){
+        cvs.canvas = cvs.querySelector("canvas");
+        cvs.canvas.ctx = cvs.canvas.getContext("2d");
+        cvs.draw = drawImg;
+        cvs.panels = [];
+        cvs.imageBmp = null;
+
+        cvs.canvas.addEventListener("dragover", function(evt){
+          evt.preventDefault();
+        });
+        cvs.canvas.addEventListener("drop", dropImage);
+
+        var drawFn = cvs.draw.bind(cvs);
+        makeInputGetters(cvs, drawFn);
+
+        cvs.draw();
+      }
+
+      function drawImg() {
+        var ctx = this.canvas.ctx;
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        if(this.imageBmp) {
+          ctx.drawImage(this.imageBmp, 0, 0);
+          if(this.panels.length > 0) {
+            for(let i = 0; i < 20; i++) {
+              let imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+              this.panels.forEach(panel => {
+                /*let xFactor = panel.width / this.canvas.width;
+                let yFactor = panel.height / this.canvas.height;
+                ctx.scale(xFactor, yFactor);*/
+                //ctx.putImageData(imgData, panel.x / xFactor, panel.y / yFactor);
+                /*ctx.fillStyle = 'red';
+                ctx.fillRect(panel.x / xFactor, panel.y / yFactor, this.canvas.width, this.canvas.height);
+                ctx.setTransform(1, 0, 0, 1, 0, 0);*/
+                ctx.drawImage(this.canvas, panel.x, panel.y, panel.width, panel.height);
+              });
+            }
+          }
+        }
+      }
+
+      function addPanel() {
+        this.panels.push({
+          x: Math.floor(Math.random() * this.canvas.width),
+          y: Math.floor(Math.random() * this.canvas.height),
+          width: 100,
+          height: 100
+        });
+        this.draw();
+      }
+
+      function dropImage(evt){
+        var imageFile = null;
+        for(var i = 0; i < evt.dataTransfer.files.length; i++){
+          var curFile = evt.dataTransfer.files[i];
+          if(curFile.type.startsWith("image")){
+            imageFile = curFile;
+            break;
+          }
+        }
+
+        if(imageFile){
+          evt.preventDefault();
+        }
+        else return;
+
+        var cvs = this.closest('.recursor');
+
+        createImageBitmap(imageFile).then(imgBmp => {
+          cvs.canvas.width = imgBmp.width;
+          cvs.canvas.height = imgBmp.height;
+          cvs.imageBmp = imgBmp;
+          cvs.panels = [];
+
+          document.querySelector("button[name=addPanel]").disabled = false;
+
+          cvs.draw();
+        });
+        //document.getElementById("testImage").src = URL.createObjectURL(imageFile);
+      }
+
+      function downloadImage(evt){
+        var data = this.canvas.toBlob(function(blob){
+          var imgUrl = URL.createObjectURL(blob);
+          var imgLink = document.querySelector("a.imgLink");
+          imgLink.href = imgUrl;
+          imgLink.download = "recursor.png";
+          imgLink.click();
+        });
+      }
+
+      function makeInputGetters(obj, changeFn) {
+        obj.querySelectorAll("input[name], textarea[name], select[name]")
+          .forEach(function(input) {
+            var name = input.name;
+            var valueKey = "value";
+            switch(input.type){
+              case "number":
+                valueKey = "valueAsNumber";
+                break;
+              case "checkbox":
+              case "radio":
+                valueKey = "checked";
+                break;
+            }
+            obj[name] = input[valueKey];
+            input.addEventListener("change", function(){
+              obj[name] = input[valueKey];
+              if(changeFn) changeFn();
+            });
+          });
+        obj.querySelectorAll("button[name]")
+          .forEach(function(btn) {
+            btn.addEventListener("click", window[btn.name].bind(obj));
+          });
+      }
+
+      window.addEventListener("load", function(){
+        document.querySelectorAll(".recursor").forEach(initCanvas);
+      })
+    //]]></script>
+  </head>
+  <body>
+    <div class="recursor">
+      <canvas width="1000" height="1000" style="border: 1px solid black;"></canvas>
+      <div class="controls">
+        <button name="addPanel" disabled>Add Panel</button>
+        <button name="downloadImage">Download Image</button>
+        <a class="imgLink" style="display: none">image download</a>
+      </div>
+      <!--<img id="testImage" />-->
+    </div>
+  </body>
+</html>
