@@ -12,10 +12,12 @@
         cvs.panels = [];
         cvs.imageBmp = null;
 
-        cvs.canvas.addEventListener("dragover", function(evt){
+        let wrapper = cvs.querySelector(".wrapper");
+
+        wrapper.addEventListener("dragover", function(evt){
           evt.preventDefault();
         });
-        cvs.canvas.addEventListener("drop", dropImage);
+        wrapper.addEventListener("drop", dropImage);
 
         var drawFn = cvs.draw.bind(cvs);
         makeInputGetters(cvs, drawFn);
@@ -29,7 +31,7 @@
         if(this.imageBmp) {
           ctx.drawImage(this.imageBmp, 0, 0);
           if(this.panels.length > 0) {
-            for(let i = 0; i < 20; i++) {
+            for(let i = 0; i < 6; i++) {
               let imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
               this.panels.forEach(panel => {
                 /*let xFactor = panel.width / this.canvas.width;
@@ -47,12 +49,20 @@
       }
 
       function addPanel() {
-        this.panels.push({
+        let newPanel = {
           x: Math.floor(Math.random() * this.canvas.width),
           y: Math.floor(Math.random() * this.canvas.height),
-          width: 100,
+          width: 100 * (this.canvas.width / this.canvas.height),
           height: 100
-        });
+        };
+        this.panels.push(newPanel);
+        newPanel.element = document.createElement("div");
+        newPanel.element.className = "panel";
+        newPanel.element.style.top = newPanel.y + "px";
+        newPanel.element.style.left = newPanel.x + "px";
+        newPanel.element.style.width = newPanel.width + "px";
+        newPanel.element.style.height = newPanel.height + "px";
+        this.querySelector(".panels").appendChild(newPanel.element);
         this.draw();
       }
 
@@ -78,6 +88,7 @@
           cvs.canvas.height = imgBmp.height;
           cvs.imageBmp = imgBmp;
           cvs.panels = [];
+          cvs.querySelector(".panels").innerHTML = "";
 
           document.querySelector("button[name=addPanel]").disabled = false;
 
@@ -127,9 +138,36 @@
       })
     //]]></script>
   </head>
+  <style type="text/css">
+    .wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    .panels {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      visibility: hidden;
+      overflow: hidden;
+    }
+    .wrapper:hover > .panels {
+      visibility: visible;
+    }
+    .panels > .panel {
+      cursor: move;
+      border: 2px outset #888;
+      position: absolute;
+      box-sizing: border-box;
+    }
+  </style>
   <body>
     <div class="recursor">
-      <canvas width="1000" height="1000" style="border: 1px solid black;"></canvas>
+      <div class="wrapper">
+        <canvas width="1000" height="1000" style="border: 1px solid black;"></canvas>
+        <div class="panels"> </div>
+      </div>
       <div class="controls">
         <button name="addPanel" disabled>Add Panel</button>
         <button name="downloadImage">Download Image</button>
