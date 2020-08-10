@@ -5,6 +5,16 @@
     <script type="text/javascript">//<![CDATA[
       "use strict";
 
+      var dragPanel, panelX, panelY;
+
+      MouseEvent.prototype.localX = function() {
+        return this.pageX - this.currentTarget.offsetLeft;
+      }
+
+      MouseEvent.prototype.localY = function() {
+        return this.pageY - this.currentTarget.offsetTop;
+      }
+
       function initCanvas(cvs){
         cvs.canvas = cvs.querySelector("canvas");
         cvs.canvas.ctx = cvs.canvas.getContext("2d");
@@ -14,13 +24,25 @@
 
         let wrapper = cvs.querySelector(".wrapper");
 
-        wrapper.addEventListener("dragover", function(evt){
-          evt.preventDefault();
-        });
+        wrapper.addEventListener("dragover", evt => { evt.preventDefault(); });
         wrapper.addEventListener("drop", dropImage);
 
         var drawFn = cvs.draw.bind(cvs);
         makeInputGetters(cvs, drawFn);
+
+        wrapper.addEventListener("mousemove", evt => {
+          if(dragPanel) {
+            dragPanel.x = evt.localX() - panelX;
+            dragPanel.y = evt.localY() - panelY;
+            dragPanel.updateElement();
+            cvs.draw();
+          }
+        });
+
+        wrapper.addEventListener("mouseup", evt => {
+          dragPanel = null;
+          cvs.draw();
+        });
 
         cvs.draw();
       }
@@ -57,11 +79,21 @@
         };
         this.panels.push(newPanel);
         newPanel.element = document.createElement("div");
-        newPanel.element.className = "panel";
-        newPanel.element.style.top = newPanel.y + "px";
-        newPanel.element.style.left = newPanel.x + "px";
-        newPanel.element.style.width = newPanel.width + "px";
-        newPanel.element.style.height = newPanel.height + "px";
+        newPanel.updateElement = () => {
+          newPanel.element.className = "panel";
+          newPanel.element.style.top = newPanel.y + "px";
+          newPanel.element.style.left = newPanel.x + "px";
+          newPanel.element.style.width = newPanel.width + "px";
+          newPanel.element.style.height = newPanel.height + "px";
+        };
+        newPanel.updateElement();
+
+        newPanel.element.addEventListener("mousedown", evt => {
+          panelX = evt.localX();
+          panelY = evt.localY();
+          dragPanel = newPanel;
+        });
+
         this.querySelector(".panels").appendChild(newPanel.element);
         this.draw();
       }
