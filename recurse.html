@@ -100,76 +100,55 @@
 
         newPanel.element = document.createElement("div");
 
+        let doResize = evt => {
+          evt.stopPropagation();
+          let isTop = evt.currentTarget.classList.contains("top");
+          let isLeft = evt.currentTarget.classList.contains("left");
+          let oldWidth = newPanel.width;
+          let oldHeight = newPanel.height;
+          let oldX = newPanel.x;
+          let oldY = newPanel.y
+          this.dragAction = evt => {
+            let cvsX = evt.localX();
+            let cvsY = evt.localY();
+
+            let newWidth = Math.max(10, isLeft ? oldX - cvsX + oldWidth : cvsX - oldX);
+            let newHeight = Math.max(10, isTop ? oldY - cvsY + oldHeight : cvsY - oldY);
+
+            if((newWidth / oldWidth) < (newHeight / oldHeight)) {
+              newPanel.width = newWidth;
+              newPanel.height = newWidth / ratio;
+            }
+            else {
+              newPanel.height = newHeight;
+              newPanel.width = newHeight * ratio;
+            }
+            if(isLeft) newPanel.x = oldX - (newPanel.width - oldWidth);
+            if(isTop) newPanel.y = oldY - (newPanel.height - oldHeight);
+
+            newPanel.updateElement();
+            this.draw();
+          };
+        }
+
         let tl = document.createElement("div");
         tl.className = "resize top left";
+        tl.addEventListener("mousedown", doResize);
         newPanel.element.appendChild(tl);
 
         let tr = document.createElement("div");
         tr.className = "resize top right";
+        tr.addEventListener("mousedown", doResize);
         newPanel.element.appendChild(tr);
 
         let bl = document.createElement("div");
         bl.className = "resize bottom left";
-        bl.addEventListener("mousedown", evt => {
-          evt.stopPropagation();
-          this.setCursor(evt.target);
-          let oldWidth = newPanel.width;
-          let oldHeight = newPanel.height;
-          let oldX = newPanel.x;
-          let oldY = newPanel.y
-          this.dragAction = evt => {
-            let cvsX = evt.localX();
-            let cvsY = evt.localY();
-
-            let newWidth = Math.max(10, oldX - cvsX + oldWidth);
-            let newHeight = Math.max(10, cvsY - oldY);
-
-            if((newWidth / oldWidth) < (newHeight / oldHeight)) {
-              newPanel.width = newWidth;
-              newPanel.height = newWidth / ratio;
-            }
-            else {
-              newPanel.height = newHeight;
-              newPanel.width = newHeight * ratio;
-            }
-            newPanel.x = oldX - (newPanel.width - oldWidth);
-
-
-            newPanel.updateElement();
-            this.draw();
-          };
-        });
+        bl.addEventListener("mousedown", doResize);
         newPanel.element.appendChild(bl);
 
         let br = document.createElement("div");
         br.className = "resize bottom right";
-        br.addEventListener("mousedown", evt => {
-          evt.stopPropagation();
-          this.setCursor(evt.target);
-          let oldWidth = newPanel.width;
-          let oldHeight = newPanel.height;
-          let oldX = newPanel.x;
-          let oldY = newPanel.y
-          this.dragAction = evt => {
-            let cvsX = evt.localX();
-            let cvsY = evt.localY();
-
-            let newWidth = Math.max(10, cvsX - oldX);
-            let newHeight = Math.max(10, cvsY - oldY);
-
-            if((newWidth / oldWidth) < (newHeight / oldHeight)) {
-              newPanel.width = newWidth;
-              newPanel.height = newWidth / ratio;
-            }
-            else {
-              newPanel.height = newHeight;
-              newPanel.width = newHeight * ratio;
-            }
-
-            newPanel.updateElement();
-            this.draw();
-          };
-        });
+        br.addEventListener("mousedown", doResize);
         newPanel.element.appendChild(br);
 
         newPanel.updateElement = () => {
