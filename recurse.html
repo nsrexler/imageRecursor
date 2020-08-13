@@ -56,10 +56,10 @@
           cvs.draw();
         });
 
-        cvs.setCursor = target => {
-          cvs.style.cursor = window.getComputedStyle(target).cursor;
+        wrapper.addEventListener("mousedown", evt => {
+          cvs.style.cursor = window.getComputedStyle(evt.target).cursor;
           console.log(cvs.style.cursor);
-        };
+        }, true);
 
         cvs.draw();
       }
