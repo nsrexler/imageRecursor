@@ -2,22 +2,6 @@
 <html>
   <head>
     <title>Image Recursor</title>
-    <script type="text/javascript">
-      /* Safari and Edge polyfill for createImageBitmap
-       * https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/createImageBitmap
-       */
-      if (!('createImageBitmap' in window)) {
-          window.createImageBitmap = async function(blob) {
-              return new Promise((resolve,reject) => {
-                  let img = document.createElement('img');
-                  img.addEventListener('load', function() {
-                      resolve(this);
-                  });
-                  img.src = URL.createObjectURL(blob);
-              });
-          }
-      }
-    </script>
     <script type="text/javascript">//<![CDATA[
       "use strict";
 
@@ -71,16 +55,13 @@
           ctx.drawImage(this.imageBmp, 0, 0);
           if(this.panels.length > 0) {
             for(let i = 0; i < 6; i++) {
-              let imgData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
               this.panels.forEach(panel => {
-                /*let xFactor = panel.width / this.canvas.width;
-                let yFactor = panel.height / this.canvas.height;
-                ctx.scale(xFactor, yFactor);*/
-                //ctx.putImageData(imgData, panel.x / xFactor, panel.y / yFactor);
-                /*ctx.fillStyle = 'red';
-                ctx.fillRect(panel.x / xFactor, panel.y / yFactor, this.canvas.width, this.canvas.height);
-                ctx.setTransform(1, 0, 0, 1, 0, 0);*/
-                ctx.drawImage(this.canvas, panel.x, panel.y, panel.width, panel.height);
+                ctx.translate(panel.x, panel.y);
+                ctx.scale(panel.width / this.canvas.width, panel.height / this.canvas.height);
+                ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+                ctx.rotate(panel.angle);
+                ctx.drawImage(this.canvas, this.canvas.width / -2, this.canvas.height / -2);
+                ctx.resetTransform();
               });
             }
           }
@@ -94,7 +75,8 @@
           x: Math.floor(Math.random() * this.canvas.width),
           y: Math.floor(Math.random() * this.canvas.height),
           width: 100 * ratio,
-          height: 100
+          height: 100,
+          angle: 0
         };
         this.panels.push(newPanel);
 
@@ -157,19 +139,31 @@
           newPanel.element.style.left = newPanel.x + "px";
           newPanel.element.style.width = newPanel.width + "px";
           newPanel.element.style.height = newPanel.height + "px";
+          newPanel.element.style.transform = `rotate(${newPanel.angle}rad)`;
         };
         newPanel.updateElement();
 
-        let panelX, panelY;
-
         newPanel.element.addEventListener("mousedown", evt => {
-          panelX = evt.localX();
-          panelY = evt.localY();
-          this.dragAction = evt => {
-            newPanel.x = evt.localX() - panelX;
-            newPanel.y = evt.localY() - panelY;
-            newPanel.updateElement();
-            this.draw();
+          if(evt.altKey) {
+            let originX = evt.currentTarget.offsetLeft + (evt.currentTarget.offsetWidth / 2);
+            let originY = evt.currentTarget.offsetTop + (evt.currentTarget.offsetHeight / 2);
+            let origAngle = Math.atan2(evt.pageX - originX, evt.pageY - originY) + newPanel.angle;
+            this.dragAction = evt => {
+              let currentAngle = Math.atan2(evt.pageX - originX, evt.pageY - originY);
+              newPanel.angle = origAngle - currentAngle;
+              newPanel.updateElement();
+              this.draw();
+            };
+          }
+          else {
+            let panelX = evt.localX();
+            let panelY = evt.localY();
+            this.dragAction = evt => {
+              newPanel.x = evt.localX() - panelX;
+              newPanel.y = evt.localY() - panelY;
+              newPanel.updateElement();
+              this.draw();
+            };
           }
         });
 
