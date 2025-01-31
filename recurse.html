@@ -56,11 +56,11 @@
           if(this.panels.length > 0) {
             for(let i = 0; i < 6; i++) {
               this.panels.forEach(panel => {
-                ctx.translate(panel.x, panel.y);
+                ctx.translate(panel.x - (panel.width / 2.0), panel.y - (panel.height / 2.0));
                 ctx.scale(panel.width / this.canvas.width, panel.height / this.canvas.height);
-                ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+                ctx.translate(this.canvas.width / 2.0, this.canvas.height / 2.0);
                 ctx.rotate(panel.angle);
-                ctx.drawImage(this.canvas, this.canvas.width / -2, this.canvas.height / -2);
+                ctx.drawImage(this.canvas, this.canvas.width / -2.0, this.canvas.height / -2.0);
                 ctx.resetTransform();
               });
             }
@@ -84,29 +84,18 @@
 
         let doResize = evt => {
           evt.stopPropagation();
-          let isTop = evt.currentTarget.classList.contains("top");
-          let isLeft = evt.currentTarget.classList.contains("left");
-          let oldWidth = newPanel.width;
-          let oldHeight = newPanel.height;
-          let oldX = newPanel.x;
-          let oldY = newPanel.y
+          let corner = evt.currentTarget;
+          // let isTop = corner.classList.contains("top");
+          // let isLeft = corner.classList.contains("left");
+          let oldHypo = Math.sqrt((newPanel.width * newPanel.width / 4) + (newPanel.height * newPanel.height / 4));
+          let sideRatio = newPanel.height / oldHypo;
           this.dragAction = evt => {
             let cvsX = evt.localX();
             let cvsY = evt.localY();
 
-            let newWidth = Math.max(10, isLeft ? oldX - cvsX + oldWidth : cvsX - oldX);
-            let newHeight = Math.max(10, isTop ? oldY - cvsY + oldHeight : cvsY - oldY);
-
-            if((newWidth / oldWidth) < (newHeight / oldHeight)) {
-              newPanel.width = newWidth;
-              newPanel.height = newWidth / ratio;
-            }
-            else {
-              newPanel.height = newHeight;
-              newPanel.width = newHeight * ratio;
-            }
-            if(isLeft) newPanel.x = oldX - (newPanel.width - oldWidth);
-            if(isTop) newPanel.y = oldY - (newPanel.height - oldHeight);
+            let newHypo = Math.sqrt((cvsX - newPanel.x) * (cvsX - newPanel.x) + (cvsY - newPanel.y) * (cvsY - newPanel.y));
+            newPanel.height = sideRatio * newHypo;
+            newPanel.width = newPanel.height * ratio;
 
             newPanel.updateElement();
             this.draw();
@@ -135,8 +124,8 @@
 
         newPanel.updateElement = () => {
           newPanel.element.className = "panel";
-          newPanel.element.style.top = newPanel.y + "px";
-          newPanel.element.style.left = newPanel.x + "px";
+          newPanel.element.style.top = (newPanel.y - (newPanel.height / 2)) + "px";
+          newPanel.element.style.left = (newPanel.x - (newPanel.width / 2)) + "px";
           newPanel.element.style.width = newPanel.width + "px";
           newPanel.element.style.height = newPanel.height + "px";
           newPanel.element.style.transform = `rotate(${newPanel.angle}rad)`;
@@ -156,8 +145,8 @@
             };
           }
           else {
-            let panelX = evt.localX();
-            let panelY = evt.localY();
+            let panelX = evt.localX() - (newPanel.width / 2);
+            let panelY = evt.localY() - (newPanel.height / 2);
             this.dragAction = evt => {
               newPanel.x = evt.localX() - panelX;
               newPanel.y = evt.localY() - panelY;
