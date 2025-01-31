@@ -85,10 +85,20 @@
         let doResize = evt => {
           evt.stopPropagation();
           let corner = evt.currentTarget;
-          // let isTop = corner.classList.contains("top");
-          // let isLeft = corner.classList.contains("left");
+          let isTop = corner.classList.contains("top");
+          let isLeft = corner.classList.contains("left");
           let oldHypo = Math.sqrt((newPanel.width * newPanel.width / 4) + (newPanel.height * newPanel.height / 4));
           let sideRatio = newPanel.height / oldHypo;
+          let startAngle = (isTop === isLeft) ? Math.atan(newPanel.width / newPanel.height) : Math.atan(newPanel.height / newPanel.width);
+          if(!isTop && isLeft) {
+            startAngle += Math.PI * 1.5;
+          }
+          else if(isTop && isLeft) {
+            startAngle += Math.PI;
+          }
+          else if(isTop && !isLeft) {
+            startAngle += Math.PI * 0.5;
+          }
           this.dragAction = evt => {
             let cvsX = evt.localX();
             let cvsY = evt.localY();
@@ -96,6 +106,9 @@
             let newHypo = Math.sqrt((cvsX - newPanel.x) * (cvsX - newPanel.x) + (cvsY - newPanel.y) * (cvsY - newPanel.y));
             newPanel.height = sideRatio * newHypo;
             newPanel.width = newPanel.height * ratio;
+
+            let currentAngle = Math.atan2(cvsX - newPanel.x, cvsY - newPanel.y);
+            newPanel.angle = startAngle - currentAngle;
 
             newPanel.updateElement();
             this.draw();
@@ -133,19 +146,7 @@
         newPanel.updateElement();
 
         newPanel.element.addEventListener("mousedown", evt => {
-          if(evt.altKey) {
-            let originX = evt.currentTarget.offsetLeft + (evt.currentTarget.offsetWidth / 2);
-            let originY = evt.currentTarget.offsetTop + (evt.currentTarget.offsetHeight / 2);
-            let origAngle = Math.atan2(evt.pageX - originX, evt.pageY - originY) + newPanel.angle;
-            this.dragAction = evt => {
-              let currentAngle = Math.atan2(evt.pageX - originX, evt.pageY - originY);
-              newPanel.angle = origAngle - currentAngle;
-              newPanel.updateElement();
-              this.draw();
-            };
-          }
-          else {
-            let panelX = evt.localX() - (newPanel.width / 2);
+          let panelX = evt.localX() - (newPanel.width / 2);
             let panelY = evt.localY() - (newPanel.height / 2);
             this.dragAction = evt => {
               newPanel.x = evt.localX() - panelX;
@@ -153,7 +154,6 @@
               newPanel.updateElement();
               this.draw();
             };
-          }
         });
 
         this.querySelector(".panels").appendChild(newPanel.element);
@@ -260,6 +260,7 @@
       position: absolute;
       width: 10px;
       height: 10px;
+      cursor: grab;
     }
     .panel > .resize.top {
       top: -5px;
@@ -272,12 +273,6 @@
     }
     .panel > .resize.right {
       right: -5px;
-    }
-    .panel > .resize.top.left, .panel > .resize.bottom.right {
-      cursor: nwse-resize;
-    }
-    .panel > .resize.top.right, .panel > .resize.bottom.left {
-      cursor: nesw-resize;
     }
   </style>
   <body>
