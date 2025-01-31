@@ -110,6 +110,11 @@
             let currentAngle = Math.atan2(cvsX - newPanel.x, cvsY - newPanel.y);
             newPanel.angle = startAngle - currentAngle;
 
+            let angleDegrees = newPanel.angle * (180 / Math.PI);
+            if(angleDegrees < 10 && angleDegrees > -10) {
+              newPanel.angle = 0;
+            }
+
             newPanel.updateElement();
             this.draw();
           };
